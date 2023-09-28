@@ -1,6 +1,4 @@
 defmodule Livebook.Factory do
-  @moduledoc false
-
   def build(:user) do
     %Livebook.Users.User{
       id: Livebook.Utils.random_id(),
@@ -70,15 +68,16 @@ defmodule Livebook.Factory do
   def build(:fs_s3) do
     bucket_url = "https://mybucket.s3.amazonaws.com"
     hash = :crypto.hash(:sha256, bucket_url)
-    id = "s3-#{Base.url_encode64(hash, padding: false)}"
+    hub_id = Livebook.Hubs.Personal.id()
 
     %Livebook.FileSystem.S3{
-      id: id,
+      id: "#{hub_id}-s3-#{Base.url_encode64(hash, padding: false)}",
       bucket_url: bucket_url,
-      external_id: id,
+      external_id: nil,
       region: "us-east-1",
       access_key_id: "key",
-      secret_access_key: "secret"
+      secret_access_key: "secret",
+      hub_id: hub_id
     }
   end
 

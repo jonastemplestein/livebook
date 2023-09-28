@@ -20,7 +20,11 @@ defmodule Livebook.MixProject do
       escript: escript(),
       package: package(),
       default_release: :livebook,
-      releases: releases()
+      releases: releases(),
+
+      # Docs
+      homepage_url: "https://livebook.dev",
+      docs: docs()
     ]
   end
 
@@ -115,7 +119,9 @@ defmodule Livebook.MixProject do
       {:bandit, "~> 0.7", only: :test},
       {:openai_ex, "~> 0.2.3"},
       # {:anthropic_ex, "~> 0.0.1", path: "../anthropic_ex"}
-      {:anthropic_ex, "~> 0.0.1", git: "https://github.com/jonastemplestein/anthropic_ex.git"}
+      {:anthropic_ex, "~> 0.0.1", git: "https://github.com/jonastemplestein/anthropic_ex.git"},
+      # Docs
+      {:ex_doc, "~> 0.30", only: :dev, runtime: false}
     ]
   end
 
@@ -180,5 +186,30 @@ defmodule Livebook.MixProject do
     |> Standalone.copy_elixir(elixir_version)
     |> Standalone.copy_hex()
     |> Standalone.copy_rebar3(rebar3_version)
+  end
+
+  defp docs() do
+    [
+      logo: "static/images/logo.png",
+      main: "readme",
+      api_reference: false,
+      extra_section: "Guides",
+      extras: extras(),
+      filter_modules: fn mod, _ -> mod in [Livebook] end,
+      groups_for_extras: [
+        Deployment: Path.wildcard("docs/deployment/*")
+      ]
+    ]
+  end
+
+  defp extras() do
+    [
+      {:"README.md", title: "Welcome to Livebook"},
+      "docs/authentication.md",
+      "docs/deployment/docker.md",
+      "docs/deployment/cloudflare.md",
+      "docs/deployment/google_iap.md",
+      "docs/deployment/tailscale.md"
+    ]
   end
 end

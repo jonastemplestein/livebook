@@ -1,5 +1,4 @@
 defmodule Livebook.Hubs.TeamClient do
-  @moduledoc false
   use GenServer
   require Logger
 
@@ -188,10 +187,9 @@ defmodule Livebook.Hubs.TeamClient do
     {:ok, decrypted_value} = Teams.decrypt(file_system.value, secret_key, sign_secret)
 
     dumped_data =
-      Map.merge(Jason.decode!(decrypted_value), %{
-        "external_id" => file_system.id,
-        "prefix" => state.hub.id
-      })
+      decrypted_value
+      |> Jason.decode!()
+      |> Map.put("external_id", file_system.id)
 
     FileSystems.load(file_system.type, dumped_data)
   end
