@@ -1,4 +1,5 @@
 defmodule LivebookWeb.SessionLive do
+  alias Livebook.AiHelper
   use LivebookWeb, :live_view
 
   import LivebookWeb.UserHelpers
@@ -11,6 +12,9 @@ defmodule LivebookWeb.SessionLive do
   alias Livebook.JSInterop
 
   on_mount LivebookWeb.SidebarHook
+
+  # TODO I noticed Logger isn't really used anywhere in session_live - should I avoid using it?
+  require Logger
 
   @impl true
   def mount(%{"id" => session_id}, _session, socket) do
@@ -1069,6 +1073,44 @@ defmodule LivebookWeb.SessionLive do
   end
 
   @impl true
+  def handle_event(
+        "ai_helper.request_completion",
+        %{
+          "cell_id" => cell_id,
+          "code_before_selection" => code_before_selection,
+          "code_after_selection" => code_after_selection,
+          "selected_code" => selected_code,
+          "prompt" => prompt
+        },
+        socket
+      ) do
+    parent = self()
+
+    # TODO I'm not handling errors here and haven't thought
+    # much about what happens if the liveview process dies and this
+    # is still running
+    Task.async(fn ->
+      Livebook.AiHelper.stream_completion(
+        "openai",
+        # "anthropic",
+        prompt,
+        code_before_selection,
+        selected_code,
+        code_after_selection
+      )
+      |> AiHelper.filter_code_tokens()
+      |> Enum.each(fn token ->
+        send(parent, {:ai_helper_token_stream, cell_id, token})
+
+        # TODO understand why I can't just call push_event from here
+        # push_event(socket, "ai_helper_token_stream:#{cell_id}", %{token: token})
+      end)
+    end)
+
+    {:noreply, socket}
+  end
+
+  @impl true
   def handle_event("append_section", %{}, socket) do
     idx = length(socket.private.data.notebook.sections)
     Session.insert_section(socket.assigns.session.pid, idx)
@@ -1699,6 +1741,11 @@ defmodule LivebookWeb.SessionLive do
   def handle_event("open_custom_view_settings", %{}, socket) do
     {:noreply,
      push_patch(socket, to: ~p"/sessions/#{socket.assigns.session.id}/settings/custom-view")}
+  end
+
+  @impl true
+  def handle_info({:ai_helper_token_stream, cell_id, token}, socket) do
+    {:noreply, push_event(socket, "ai_helper_token_stream:#{cell_id}", %{token: token})}
   end
 
   @impl true

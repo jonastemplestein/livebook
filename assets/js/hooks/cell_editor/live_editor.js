@@ -8,6 +8,7 @@ import RemoteUser from "./live_editor/remote_user";
 import { replacedSuffixLength } from "../../lib/text_utils";
 import { settingsStore } from "../../lib/settings";
 import Doctest from "./live_editor/doctest";
+import AiHelper from "./live_editor/ai_helper";
 import { initVimMode } from "monaco-vim";
 import { EmacsExtension, unregisterKey } from "monaco-emacs";
 
@@ -41,6 +42,8 @@ class LiveEditor {
     this._onCursorSelectionChange = [];
     this._remoteUserByClientId = {};
     this._doctestByLine = {};
+
+    this._aiHelper = null;
 
     this._initializeWidgets = () => {
       this.setCodeMarkers(codeMarkers);
@@ -321,6 +324,26 @@ class LiveEditor {
       precondition: "config.editor.wordWrap == off",
       keybindings: [monaco.KeyMod.Alt | monaco.KeyCode.KeyZ],
       run: (editor) => editor.updateOptions({ wordWrap: "on" }),
+    });
+
+    this.editor.addAction({
+      contextMenuGroupId: "1_modification",
+      id: "show-ai-helper",
+      label: "Show AI helper",
+      keybindings: [monaco.KeyMod.CtrlCmd | monaco.KeyCode.KeyK],
+      run: (editor) => {
+        
+        // TODO figure out some way to send a "closed" or "disposed"
+        // event from the aiHelper to here, so we can clean up the reference.
+        // I thought I could just do obj.on() and obj.emit() ...
+        // The document.body.contains feels super janky
+        if(this._aiHelper && this._aiHelper.isOpen()) {
+          this._aiHelper.dispose();
+          this._aiHelper = null;
+        } else {
+          this._aiHelper = new AiHelper(editor, this.hook, this.cellId);
+        }
+      }
     });
 
     this.editor.addAction({
@@ -679,9 +702,9 @@ function parseItem(item, settings) {
       monaco.languages.CompletionItemInsertTextRule.InsertAsSnippet,
     command: settings.editor_auto_signature
       ? {
-          title: "Trigger Parameter Hint",
-          id: "editor.action.triggerParameterHints",
-        }
+        title: "Trigger Parameter Hint",
+        id: "editor.action.triggerParameterHints",
+      }
       : null,
   };
 }
