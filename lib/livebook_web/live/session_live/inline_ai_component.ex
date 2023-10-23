@@ -5,6 +5,13 @@ defmodule LivebookWeb.SessionLive.InlineAIComponent do
 
   require Logger
 
+  # State
+  # Input
+  #  - conversation history
+  #  - textarea input
+  #  - code before
+  #  - code after
+
   @impl true
   @spec update(maybe_improper_list | map, any) :: {:ok, map}
   def update(assigns, socket) do
@@ -18,51 +25,37 @@ defmodule LivebookWeb.SessionLive.InlineAIComponent do
   @impl true
   def render(assigns) do
     ~H"""
-    <%!-- <div class="inlineDiffViewZone" monaco-view-zone="l1" style="position: absolute; width: 100%; display: block; top: 10; height: 68px;" monaco-visible-view-zone="true">
-    <div style="height: 100%; width: 100%;">
-      <div tabindex="0" style="padding-top: 4px; box-sizing: border-box; outline: none;">
-         <div style="z-index: 1000001; position: relative; padding: 4px 4px 0px; max-width: 500px; font-size: 12px; background-color: var(--vscode-editor-background); color: var(--vscode-foreground); border-radius: 5px; user-select: text; box-sizing: border-box; overflow: hidden auto; box-shadow: 0 4px 8px var(--vscode-interactiveEditor-shadow); margin-left: 74px; border: 1px solid var(--vscode-commandCenter-inactiveBorder);">
-            <div style="position: absolute; right: -2px; top: -4px; color: var(--vscode-input-placeholderForeground); cursor: pointer; z-index: 1000002; padding: 4px;">
-               <div class="codicon codicon-x" style="font-size: 10px;"></div>
-            </div>
-            <div style="height: 4px;"></div>
-            <div style="display: flex; flex-direction: column;">
-               <div style="flex-grow: 1;">
-                  <div style="width: 100%; overflow: hidden;">
-                     <div style="display: grid; position: relative; grid-template-columns: 1fr 1fr; width: 200%;">
-                        <div autocapitalize="off" class="aislash-editor-input" contenteditable="true" spellcheck="false" data-lexical-editor="true" role="textbox" style="resize: none; grid-area: 1 / 1 / 1 / 1; overflow: hidden; line-height: inherit; font-family: inherit; font-size: inherit; color: var(--vscode-input-foreground); background-color: transparent; display: block; outline: none; box-sizing: border-box; border: none; overflow-wrap: break-word; word-break: break-word; padding: 0px 0.5rem; user-select: text; white-space: pre-wrap;">
-                           <p><br></p>
-                        </div>
-                        <div style="grid-area: 1 / 2 / 1 / 2;">
-                           <div class="aislash-editor-placeholder" style="position: relative; top: 0px; left: -100%; padding: 0px 0.5rem; pointer-events: none; user-select: none; color: var(--vscode-input-placeholderForeground);">Editing instructions... (⇅ for history, @ for code / documentation)</div>
-                        </div>
-                     </div>
-                  </div>
-               </div>
-               <div style="flex-shrink: 0;">
-                  <div class="inline-prompt-button-area" style="display: flex; justify-content: flex-start; align-items: center; margin: 4px 0px 6px;">
-                     <div class="cursor-button cursor-button-secondary cursor-button-secondary-clickable" style="user-select: none;">Esc to close</div>
-                     <div class="cursor-button cursor-button-secondary cursor-button-not-clickable" style="margin-left: auto;">⌘K to toggle focus</div>
-                  </div>
-               </div>
-            </div>
-         </div>
-      </div>
-    </div>
-    </div> --%>
-
     <div id={"inline_ai-#{@id}"}  phx-hook="InlineAIComponent"
-      data-cell-id={@id}>
+      data-cell-id={@id} class="absolute w-full p-3">
       <%!-- <div id="uniqueid" style="height:200px"></div> --%>
       <%!-- <form phx-submit="send_message" phx-target={@myself}> --%>
-      <form>
-        <input autofocus type="text" name="message" class="inline_ai_input border-2" />
-        <button class="button-base button-blue" type="submit">
-          <.spinner class="hidden phx-submit-loading:block mr-2" />
-          <span>Send</span>
-        </button>
-      </form>
+
+      <div class="w-full border border-gray-500 rounded-md p-3">
+      <.conversation_history messages={~w{a b c d}} />
+
+        <div class="absolute top-3 right-3 z-50 p-1">
+          <button class="close-button bg-transparent focus:outline-none">
+            <svg fill="none" viewBox="0 0 24 24" class="stroke-slate-300 hover:stroke-slate-50 h-4 w-4">
+              <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12"></path>
+            </svg>
+          </button>
+        </div>
+        <form>
+          <textarea class="resize-none h-6 w-full bg-transparent" placeholder="New code instructions"></textarea>
+        </form>
+        <div class="footer text-xs text-gray-600">
+        ⏎ to generate code, Esc to cancel
+        </div>
+      </div>
     </div>
+    """
+  end
+
+  defp conversation_history(assigns) do
+    ~H"""
+    <ul>
+      <li :for={message <- @messages}><%= message %></li>
+    </ul>
     """
   end
 

@@ -14,6 +14,7 @@ defmodule LivebookWeb.SessionLive do
   on_mount LivebookWeb.SidebarHook
 
   @impl true
+  @spec mount(map, any, Phoenix.LiveView.Socket.t()) :: {:ok, any}
   def mount(%{"id" => session_id}, _session, socket) do
     # We use the tracked sessions to locate the session pid, but then
     # we talk to the session process exclusively for getting all the information
